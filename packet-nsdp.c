@@ -1,7 +1,7 @@
-/* packet-gryphon.c
- * Routines for Gryphon protocol packet disassembly
- * By Steve Limkemann <stevelim@dgtech.com>
- * Copyright 1998 Steve Limkemann
+/* packet-nsdp.c
+ * Routines for Netgear Switch Discovery Protocol
+ * By Kevin Amiraux
+ * Copyright 2015 Kevin Amiraux
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
@@ -33,9 +33,6 @@
  *     https://en.wikipedia.org/wiki/Netgear_NSDP
  */
 
-#define NSDP_PORT 63322
-#define NSDP_HEADER_LEN 32
-
 void proto_register_nsdp(void);
 void proto_reg_handoff_nsdp(void);
 
@@ -66,7 +63,7 @@ static const value_string opcodenames[] = {
     { 2, "Read response" },
     { 3, "Write request" },
     { 4, "Write response" },
-    { 0,       NULL }
+    { 0, NULL }
 };
 
 static const value_string tagnames[] = {
@@ -98,20 +95,36 @@ static const value_string tagnames[] = {
 
     // Vlan configuration
     { 0x2000, "VLAN Engine" }, // basic/advanced port based, basic/advanced 802.1q
-    { 0x2400, "Port based VLAN config" }, // 2 bytes = vlanId, 1-X bytes port bitfield
+    // 2 bytes = vlanId, 1-X bytes port bitfield
+    { 0x2400, "Port based VLAN config" },
     { 0x2800, "802.1q Port membership" },
     { 0x2c00, "Delete VLAN" },
     { 0x3000, "802.1q default vlan (PVID)" },
 
     // Qos
     { 0x3400, "QOS engine" }, // 1 = port based; 2 = 802.1p
-    { 0x3800, "Port based QOS - priority" }, // 1 byte port; 1 byte priority (1 = high, 2 = medium, 3 = normal, 4 = low)
-    { 0x4c00, "Ingress bandwidth limit" }, // 1 byte port, 2 bytes, 2 bytes bandwidth (0x0 No limit, 0x1 512 Kbps, 0x2 1 Mbps, 0x3 2 Mbps, 0x4 4 Mbps, 0x5 8 Mbps, 0x6 16 Mbps, 0x7 32 Mbps, 0x8 64 Mbps, 0x9 128 Mbps, 0xa 256 Mbps, 0xb 512 Mbps)
+    // 1 byte port; 1 byte priority (1 = high, 2 = medium, 3 = normal, 4 = low)
+    { 0x3800, "Port based QOS - priority" },
+    // 1 byte port, 2 bytes, 2 bytes bandwidth
+    // 0x0 No limit
+    // 0x1 512 Kbps
+    // 0x2 1 Mbps
+    // 0x3 2 Mbps
+    // 0x4 4 Mbps
+    // 0x5 8 Mbps
+    // 0x6 16 Mbps
+    // 0x7 32 Mbps
+    // 0x8 64 Mbps
+    // 0x9 128 Mbps
+    // 0xa 256 Mbps
+    // 0xb 512 Mbps
+    { 0x4c00, "Ingress bandwidth limit" },
     { 0x5000, "Egress bandwidth limit" }, // same
     { 0x5800, "Broadcast bandwidth (storm control)" }, // same
 
     // Mirroring
-    { 0x5c00, "Port mirroring" }, // 1 byte = destination port, 2 bytes source port bitfield
+    // 1 byte = destination port, 2 bytes source port bitfield
+    { 0x5c00, "Port mirroring" },
     { 0x6000, "Available ports" },
 
     // Multicast
@@ -123,7 +136,7 @@ static const value_string tagnames[] = {
     { 0x9000, "Loop detection" }, // 1 byte = 0/1
 
     { 0xffff, "End Of Message" },
-    { 0,       NULL }
+    { 0, NULL }
 };
 
 
@@ -216,18 +229,20 @@ dissect_nsdp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     }
 }
 
-/* static gboolean */
-/* dissect_nsdp_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) */
-/* { */
-/*     data = data; */
-/*     // Version must be 1 */
-/*     // Protocol signature must be NSDP */
-/*     if (tvb_get_guint8(tvb, 0) != 1 */
-/*         || tvb_get_ntoh64(tvb, 0x18) != *((guint64*)"NSDP")) */
-/*         return (FALSE); */
-/*     dissect_nsdp(tvb, pinfo, tree); */
-/*     return (TRUE); */
-/* } */
+#if 0
+static gboolean
+dissect_nsdp_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    data = data;
+    // Version must be 1
+    // Protocol signature must be NSDP
+    if (tvb_get_guint8(tvb, 0) != 1
+        || tvb_get_ntoh64(tvb, 0x18) != *((guint64*)"NSDP"))
+        return (FALSE);
+    dissect_nsdp(tvb, pinfo, tree);
+    return (TRUE);
+}
+#endif
 
 void
 proto_register_nsdp(void)
@@ -340,9 +355,9 @@ proto_register_nsdp(void)
     };
 
     proto_nsdp = proto_register_protocol (
-        "Netgear Switch Discovery Protocol", /* name       */
-        "NSDP",      /* short name */
-        "nsdp"       /* abbrev     */
+        "Netgear Switch Discovery Protocol", // name
+        "NSDP", // short name
+        "nsdp" // abbrev
         );
 
     proto_register_field_array(proto_nsdp, hf, array_length(hf));
@@ -360,29 +375,32 @@ proto_reg_handoff_nsdp(void)
     dissector_add_uint("udp.port", 63323, nsdp_handle);
     dissector_add_uint("udp.port", 63324, nsdp_handle);
 
-    /* static gboolean nsdp_inited = FALSE; */
 
-    /* if (!nsdp_inited) */
-    /* { */
-    /*     /\* data_handle = find_dissector("data"); *\/ */
+#if 0
+    static gboolean nsdp_inited = FALSE;
 
-    /*     /\* Register our dissector with udp *\/ */
-    /*     heur_dissector_add("udp", dissect_nsdp_heur, "NSDP over UDP", "nsdp_udp", */
-    /*                        proto_nsdp, HEURISTIC_ENABLE); */
+    if (!nsdp_inited)
+    {
+        /* data_handle = find_dissector("data"); */
 
-    /*     nsdp_inited = TRUE; */
-    /* } */
+        /* Register our dissector with udp */
+        heur_dissector_add("udp", dissect_nsdp_heur, "NSDP over UDP", "nsdp_udp",
+                           proto_nsdp, HEURISTIC_ENABLE);
+
+        nsdp_inited = TRUE;
+    }
+#endif
 }
 
-/*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
- *
- * Local variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * vi: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */
+//
+// Editor modelines  -  https://www.wireshark.org/tools/modelines.html
+//
+// Local variables:
+// c-basic-offset: 4
+// tab-width: 4
+// indent-tabs-mode: nil
+// End:
+//
+// vi: set shiftwidth=4 tabstop=4 expandtab:
+// :indentSize=4:tabSize=4:noTabs=true:
+//

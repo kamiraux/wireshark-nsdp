@@ -1,7 +1,7 @@
-/* packet-gryphon.h
- * Definitions for Gryphon packet disassembly structures and routines
- * By Steve Limkemann <stevelim@dgtech.com>
- * Copyright 1998 Steve Limkemann
+/* packet-nsdp.h
+ * Definitions for Netgear Switch Discovery Protocol structures and routines
+ * By Kevin Amiraux
+ * Copyright 2015 Kevin Amiraux
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
@@ -22,5 +22,5 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-
-#define SIZEOF(x)   	(sizeof(x)/sizeof(x[0]))
+#define NSDP_PORT 63322
+#define NSDP_HEADER_LEN 32
