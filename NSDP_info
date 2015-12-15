@@ -1,0 +1,277 @@
+Here are some information about NSDP operations:
+
+Operation result:  0x0000 == success
+                   0x0700 == bad password
+
+The password given is transformed, so it's not in clear text on the wire.
+The default password is `password', it's "hash" is:
+    0x3e 0x15 0x14 0x01 0x24 0x02 0x13 0x16.
+
+System/status/switch status
+  read: 0xc00
+  resp: 0xc00 (link status/speed)
+        len: 3
+        value: byte 0: portId (1-16)
+               - byte 1: port status/speed:
+                    - 0x00 = down;
+                    - 0x01 = up 10Mbps half-duplex.
+                    - 0x02 = up 10Mbps Full-duplex;
+                    - 0x03 = up 100Mbps half-duplex;
+                    - 0x04 = up 100mbps full-duplex;
+                    - 0x05 = up 1000Mbps;
+               - byte 2: 0x01 (??)
+
+
+System/Monitoring/Port statistics
+    read: 0x1000
+    resp: 0x1000
+          len: 49
+          value: - byte 0: portId (1-16)
+                 - bytes 1-8: Bytes received (64 bits)
+                 - bytes 9-16: Bytes Sent (64 bits)
+                 - bytes 17-24: CRC Error Packets (64 bits) (supposedly)
+                 - bytes 25-48: ??
+
+    To clear:
+    write: admin password (0x000a)
+    write: 0x1400
+           len: 1
+           value: 0x1
+
+
+Request available ports:
+    read: 0x6000
+    resp: 0x6000
+          len: 1
+          value: - byte 0: Number of ports
+
+
+System/Monitoring/Cable tester
+    write: admin password
+    write: 0x1800 test cable request
+           len: 2
+           value: - byte 0: portId
+                  - byte 1: 0x01 (opcode??)
+
+    write ack;
+
+    read: 0x1c00 test cable result
+          len: 1
+          value: - byte 0: portId
+    resp:     0x1c00
+            len: 9
+            value: - byte 0: portId
+                   - bytes 1-8: 0x00000000 00000004 = OK
+                                0x00000001 00000000 = No cable
+                                0x00000002 00000000 = Open cable, cable fault 0 meter
+
+
+
+System/Monitoring/Mirroring
+    read: 0x5c00 (port mirroring)
+    resp: 0x5c00
+          len: 4
+          value: 00 00 00 00 == mirroring disabled
+                 otherwise, same meaning than when adding a mirror
+
+
+    read: 0x8c00 ??
+    resp: 0x8c00 ??
+          len: 1
+          value: 00
+
+
+
+    Add mirroring: (on gs116e, only 1 mirroring can be configured)
+    write: admin password
+    write: 0x5c00 (port mirroring)
+           len: 3+
+           value:  eg: 0b 00 00 03
+                   - byte 0: dest port Id
+                   - byte 1: 0
+                   - bytes 2-X: bitfields source ports:
+                       Each byte represents a group of 8 ports (only 1 byte on a 8
+                       ports switch, 2 bytes on a 16 ports switch...). Port X in each
+                       8 ports group is represented by 2**(8-X), eg port 8 -> 1, port
+                       1 -> 128.
+    write ack;
+
+
+System/Multicast/IGMP Snooping
+    read: 0x8000 ??
+    resp: 0x8000
+           len: 2
+           value: 00 00
+
+    read: 0x6800 (igmp snooping status)
+    resp: 0x6800 (same for write)
+          len: 4
+          value: eg: 00 01 00 01
+                 - byte 0: 00 ??
+                 - byte 1: 00 == disabled, 01 == enabled
+                 - bytes 2-3: vlanId
+
+
+    read: 0x6c00 (block unknown mcast)
+    resp: 0x6c00 (same for write)
+          len: 1
+          value: 00 == disabled, 01 == enabled
+
+    read: 0x7000 (Validate IGMPv3 IP header)
+    resp: 0x7000   (same for write)
+          len: 1
+          value: 00 == disabled, 01 == enabled
+
+    read: 0x8000 (IGMP Snooping Static Router Port)
+    resp: 0x8000
+          len: 1+
+          value: - bytes 0-X: bitfields (same than usual) for router ports
+
+System/Management/Loop detection
+    read: 0x9000
+    resp: 0x9000   (same for write)
+          len: 1
+          value: - byte 0: 00 == disabled, 01 == enabled
+
+System/LAG
+
+
+
+Vlan
+    read: 0x2000 Vlan engine
+    resp: 0x2000
+          len: 1
+          value: - byte 0: - 0x00 disabled;
+                           - 0x01 Basic port based (a port is part of only 1 vlan);
+                           - 0x02 Advanced port based (a port can be part of 1 or
+                             more vlans);
+                           - 0x03 Basic 802.1Q (a port is part of only 1 vlan);
+                           - 0x04 Advanced 802.1Q (port can be part of multiple
+                             vlans, tagging, etc).
+
+Vlan/Port based/Basic
+    read: 0x2400
+    resp: 0x2400 (same for write)
+          len: 3+
+          value: - bytes 0-1: Vlan Id (gives a tlv for each vlan)
+                 - bytes 2-X: port bitfield
+
+Vlan/Port based/Advanced
+    read: 0x2400
+    resp: 0x2400 (same for write)
+          len: 3+
+          value: - bytes 0-1: Vlan Id (gives a tlv for each vlan)
+                 - bytes 2-X: port bitfield
+
+
+Vlan/802.1Q/Basic
+    read: 0x6400 ??
+    resp: 0x6400 ??
+          len: 2
+          value: eg: 00 40
+
+    read: 0x8c00 ??
+    resp: 0x8c00 ??
+          len: 1
+          value: eg: 00 ??
+
+    read: 0x3000 (802.1q default VLAN Id (PVID))
+    resp: 0x3000
+          len: 3
+          value: - byte 0: portId
+                  - byte 1-2: VLAN Id
+
+    write: 0x2800 (.1q port membership)
+           len: 4+
+           value: - bytes 0-1: VLAN Id
+                  - bytes 2-X: Port bitfield (vlan membership)
+                  - bytes X+1-Y: Port bitfield (tagged port) all 0s in Basic mode
+
+            0x3000 (default vlanId (PVID))
+            len: 3
+            value: - byte 0: portId
+                   - byte 1-2: VLAN Id
+
+
+Vlan/802.1Q/Advanced
+    read: 0x2800 (.1q port membership)
+          len: 0 -> read all
+          OR
+          len: 2 -> read a specific vlan
+          value: vlanId
+
+    resp: 0x2800 (same for write, bitfields all 0s to just create the vlan)
+          len: 4+
+          value: - bytes 0-1: VLAN Id
+                 - bytes 2-X: Port bitfield (vlan membership)
+                 - bytes X+1-Y: Port bitfield (tagged port)
+
+    write: 0x2c00 (delete VLAN)
+           len: 2
+           value: - bytes 0-1: VLAN Id
+
+
+QoS/Qos
+
+    read: 0x3400 (QoS engine)
+    resp: 0x3400   (same for write)
+          len: 1
+          value: - byte 0:
+                     - 01 == Port based;
+                     - 02 == 802.1p.
+
+    For port based QoS:
+    read: 0x3800 (Qos priority)
+    resp: 0x3800   (same for write)
+          len: 2
+          value: - byte 0: portId (gives 1 tlv for each port)
+                 - byte 1: port priority:
+                     - 01 == high priority;
+                     - 02 == medium;
+                     - 03 == normal;
+                     - 04 == low;
+
+Qos/Rate Limit
+    read: 0x4c00 (Ingress limit), 0x5000 (Egress limit)
+    resp: 0x4c00, 0x5000 (same for write)
+          len: 5
+          value: - byte 0: portId
+                 - bytes 1-2: ??
+                 - bytes 3-4: limit:
+                     - 0 == no limit;
+                     - 1 == 512 Kbps;
+                     - 2 == 1 Mbps;
+                     - 3 == 2 Mbps;
+                     - 4 == 4 Mbps;
+                     - 5 == 8 Mbps;
+                     - 6 == 16 Mbps;
+                     - 7 == 32 Mbps;
+                     - 8 == 64 Mbps;
+                     - 9 == 128 Mbps;
+                     - a == 256 Mbps;
+                     - b == 512 Mbps.
+
+QoS/Bcast filtering
+    read: 0x5400
+    resp: 0x5400 (same for write)
+          len: 1
+          value: 00 == disabled, 03 == enabled
+
+    read: 0x5800 (storm control bandwidth)
+    write: 0x5800 (same for write)
+           len: 5
+           value: - byte 0: portId
+                  - bytes 1-2: ??
+                  - bytes 3-4: limit:
+                      - 0 == no limit;
+                      - 1 == 512 Kbps;
+                      - 2 == 1 Mbps;
+                      - 3 == 2 Mbps;
+                      - 4 == 4 Mbps;
+                      - 5 == 8 Mbps;
+                      - 6 == 16 Mbps;
+                      - 7 == 32 Mbps;
+                      - 8 == 64 Mbps;
+                      - 9 == 128 Mbps;
+                      - a == 256 Mbps;
+                      - b == 512 Mbps.
