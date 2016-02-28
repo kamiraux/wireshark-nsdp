@@ -11,7 +11,7 @@ System/status/switch status
   read: 0xc00
   resp: 0xc00 (link status/speed)
         len: 3
-        value: byte 0: portId (1-16)
+        value: - byte 0: portId (1-16)
                - byte 1: port status/speed:
                     - 0x00 = down;
                     - 0x01 = up 10Mbps half-duplex.
@@ -58,19 +58,19 @@ System/Monitoring/Cable tester
     read: 0x1c00 test cable result
           len: 1
           value: - byte 0: portId
-    resp:     0x1c00
-            len: 9
-            value: - byte 0: portId
-                   - bytes 1-8: 0x00000000 00000004 = OK
-                                0x00000001 00000000 = No cable
-                                0x00000002 00000000 = Open cable, cable fault 0 meter
+    resp: 0x1c00
+          len: 9
+          value: - byte 0: portId
+                 - bytes 1-8: 0x00000000 00000004 = OK
+                              0x00000001 00000000 = No cable
+                              0x00000002 00000000 = Open cable, cable fault 0 meter
 
 
 
 System/Monitoring/Mirroring
     read: 0x5c00 (port mirroring)
     resp: 0x5c00
-          len: 4
+          len: 3+
           value: 00 00 00 00 == mirroring disabled
                  otherwise, same meaning than when adding a mirror
 
@@ -179,7 +179,7 @@ Vlan/802.1Q/Basic
     resp: 0x3000
           len: 3
           value: - byte 0: portId
-                  - byte 1-2: VLAN Id
+                 - byte 1-2: VLAN Id
 
     write: 0x2800 (.1q port membership)
            len: 4+
