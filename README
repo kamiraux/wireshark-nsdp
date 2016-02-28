@@ -1,1 +1,16 @@
-This plugin for Wireshark decodes the NSDP protocol used by Netgear.
+This plugin for Wireshark is a dissector that decodes the NSDP protocol used by
+Netgear for switch configuration.
+
+To use it, get a working Wireshark development environment, then put the NSDP source
+in the `plugins` directory (should be `<wiresharkRoot>/plugins/nsdp`).
+Then create `Custom.m4`, `Custom.make` and `Custom.nmake` in the plugins directory
+accordingly to Wireshark's documentation (see *.example files).
+Finally run `make` in Wireshard's root directory, it should generate the lib in
+`<wiresharkRoot>/plugins/nsdp/.libs/nsdp.so`
+
+Useful reads:
+https://www.wireshark.org/docs/wsdg_html_chunked/ChDissectAdd.html
+
+https://www.wireshark.org/docs/wsdg_html_chunked/ChSrcBuildFirstTime.html
+
+https://www.wireshark.org/docs/wsdg_html_chunked/ChSrcRunFirstTime.html
